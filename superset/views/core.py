@@ -403,14 +403,21 @@ class Superset(BaseSupersetView):
                 "slice_id", int(request.args.get("slice_id", 0))
             )
             if datasource := parsed_form_data.get("datasource"):
-                datasource_id, datasource_type = datasource.split("__")
-                parameters = CommandParameters(
-                    datasource_id=datasource_id,
-                    datasource_type=datasource_type,
-                    chart_id=slice_id,
-                    form_data=request_form_data,
-                )
-                form_data_key = CreateFormDataCommand(parameters).run()
+                parts = datasource.split("__")
+                if len(parts) == 2:
+                    datasource_id, datasource_type = parts
+                    parameters = CommandParameters(
+                        datasource_id=datasource_id,
+                        datasource_type=datasource_type,
+                        chart_id=slice_id,
+                        form_data=request_form_data,
+                    )
+                    form_data_key = CreateFormDataCommand(parameters).run()
+                else:
+                    logger.warning(
+                        "Skipping malformed datasource value in form_data: %s",
+                        datasource,
+                    )
         if form_data_key:
             url = parse.urlparse(redirect_url)
             query = parse.parse_qs(url.query)
