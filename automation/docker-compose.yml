@@ -1,0 +1,53 @@
+# automation/docker-compose.yml
+#
+# Local simulation of the Devin remediation workflow.
+# Lets you run any step of the pipeline without GitHub Actions infrastructure.
+#
+# Setup:
+#   cp automation/.env.example automation/.env
+#   # Fill in your credentials in automation/.env
+#
+# Commands:
+#   docker compose -f automation/docker-compose.yml run create-issues
+#   docker compose -f automation/docker-compose.yml run remediate
+#   docker compose -f automation/docker-compose.yml run dashboard
+
+version: "3.9"
+
+x-common-env: &common-env
+  env_file: automation/.env
+
+x-common-volumes: &common-volumes
+  volumes:
+    # Mount the host logs/ directory so sessions.json persists across runs
+    - ../logs:/app/logs
+
+services:
+
+  # Step 1: Create the three bug issues in your GitHub fork.
+  # Applying the "devin-fix" label triggers the GitHub Action automatically.
+  create-issues:
+    build:
+      context: .
+      dockerfile: automation/Dockerfile
+    command: python scripts/create_issues.py
+    <<: [*common-env, *common-volumes]
+
+  # Step 2 (optional local simulation): Trigger remediation for a single issue.
+  # In production this runs inside the GitHub Action — use this to test locally.
+  # Set ISSUE_NUMBER, ISSUE_TITLE, ISSUE_BODY, ISSUE_URL in your .env file.
+  remediate:
+    build:
+      context: .
+      dockerfile: automation/Dockerfile
+    command: python scripts/devin_remediate.py
+    <<: [*common-env, *common-volumes]
+
+  # Step 3: View the observability dashboard.
+  # Reads logs/sessions.json and prints a status report.
+  dashboard:
+    build:
+      context: .
+      dockerfile: automation/Dockerfile
+    command: python scripts/dashboard.py
+    <<: [*common-env, *common-volumes]
