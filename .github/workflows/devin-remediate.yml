@@ -6,8 +6,10 @@
 # this workflow fires automatically and creates a Devin session to fix it.
 #
 # Required repository secrets (Settings → Secrets → Actions):
-#   DEVIN_API_KEY  — your Devin API key
-#   DEVIN_ORG_ID   — your Devin organization ID
+#   DEVIN_API_KEY  — your Devin API key (from app.devin.ai → Settings → API Keys)
+#
+# Optional secrets:
+#   DEVIN_ORG_ID   — only needed for v3 service user keys; omit for legacy API keys
 #
 # The built-in GITHUB_TOKEN secret is provided automatically by GitHub.
 
