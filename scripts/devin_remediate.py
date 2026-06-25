@@ -13,16 +13,13 @@ What this script does:
   5. Appends a structured log entry to logs/sessions.json for observability
 
 Required environment variables:
-  DEVIN_API_KEY       — Devin API key (legacy key from Settings → API Keys)
+  DEVIN_API_KEY       — Devin API key (from app.devin.ai → Settings → API Keys)
   GITHUB_TOKEN        — GitHub token with issues:write permission
   GITHUB_REPOSITORY   — "owner/repo" (e.g. juikhankari/superset)
   ISSUE_NUMBER        — GitHub issue number
   ISSUE_TITLE         — GitHub issue title
   ISSUE_BODY          — GitHub issue body (the fix description)
   ISSUE_URL           — Full URL to the GitHub issue
-
-Optional environment variables:
-  DEVIN_ORG_ID        — Only needed for v3 API (service user keys). Legacy keys use v1.
 """
 
 import json
@@ -46,19 +43,9 @@ ISSUE_TITLE = os.environ["ISSUE_TITLE"]
 ISSUE_BODY = os.environ["ISSUE_BODY"]
 ISSUE_URL = os.environ["ISSUE_URL"]
 
-# Support both v1 (legacy API keys) and v3 (service user keys).
-# If DEVIN_ORG_ID is set we use v3; otherwise fall back to v1.
-_ORG_ID = os.environ.get("DEVIN_ORG_ID", "")
-DEVIN_SESSIONS_URL = (
-    f"https://api.devin.ai/v3/organizations/{_ORG_ID}/sessions"
-    if _ORG_ID
-    else "https://api.devin.ai/v1/sessions"
-)
-DEVIN_BASE_URL = (
-    f"https://api.devin.ai/v3/organizations/{_ORG_ID}"
-    if _ORG_ID
-    else "https://api.devin.ai/v1"
-)
+# Devin v1 API — works with standard API keys from app.devin.ai → Settings → API Keys
+DEVIN_BASE_URL = "https://api.devin.ai/v1"
+DEVIN_SESSIONS_URL = f"{DEVIN_BASE_URL}/sessions"
 
 GITHUB_API_URL = "https://api.github.com"
 LOGS_FILE = Path("logs/sessions.json")
@@ -102,8 +89,7 @@ Step-by-step instructions:
 Be precise. Change only what is needed to fix the described bug.
 """
 
-    api_version = "v3" if _ORG_ID else "v1"
-    print(f"[devin] Creating session via {api_version} API for issue #{issue_number}...")
+    print(f"[devin] Creating session via v1 API for issue #{issue_number}...")
     response = requests.post(
         DEVIN_SESSIONS_URL,
         headers={
@@ -120,7 +106,7 @@ Be precise. Change only what is needed to fix the described bug.
 def get_session_status(session_id: str) -> dict:
     """Fetch the current state of a Devin session."""
     response = requests.get(
-        f"{DEVIN_BASE_URL}/sessions/{session_id}",  # works for both v1 and v3
+        f"{DEVIN_BASE_URL}/sessions/{session_id}",
         headers={"Authorization": f"Bearer {DEVIN_API_KEY}"},
         timeout=30,
     )
