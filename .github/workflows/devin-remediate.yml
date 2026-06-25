@@ -1,0 +1,51 @@
+# .github/workflows/devin-remediate.yml
+#
+# Event-Driven Devin Remediation Workflow
+#
+# Trigger: When any issue in this repository is labeled "devin-fix",
+# this workflow fires automatically and creates a Devin session to fix it.
+#
+# Required repository secrets (Settings → Secrets → Actions):
+#   DEVIN_API_KEY  — your Devin API key
+#   DEVIN_ORG_ID   — your Devin organization ID
+#
+# The built-in GITHUB_TOKEN secret is provided automatically by GitHub.
+
+name: Devin Auto-Remediation
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  remediate:
+    # Only run when the label applied is specifically "devin-fix"
+    if: github.event.label.name == 'devin-fix'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write      # needed to post status comments back to the issue
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install script dependencies
+        run: pip install --no-cache-dir requests
+
+      - name: Run Devin remediation
+        env:
+          DEVIN_API_KEY: ${{ secrets.DEVIN_API_KEY }}
+          DEVIN_ORG_ID: ${{ secrets.DEVIN_ORG_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+        run: python scripts/devin_remediate.py
