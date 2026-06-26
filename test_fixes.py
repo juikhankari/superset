@@ -34,13 +34,14 @@ def after_fix_1(datasource_key):
         return "400 Bad Request — Invalid datasourceKey format"
 
 good_key = "42__table"
-bad_key  = "malformed-no-separator"
+# A frontend bug or corrupted bookmark URL sends the datasource ID without the type suffix
+bad_key  = "42"
 
-print(f"\n  Input: '{good_key}' (valid)")
+print(f"\n  Request: GET /superset/fetch_datasource_metadata?datasourceKey={good_key}")
 print(f"  Before: {before_fix_1(good_key)}")
 print(f"  After:  {after_fix_1(good_key)}  {PASS}")
 
-print(f"\n  Input: '{bad_key}' (malformed)")
+print(f"\n  Request: GET /superset/fetch_datasource_metadata?datasourceKey={bad_key}  ← missing '__table'")
 try:
     before_fix_1(bad_key)
     print(f"  Before: (no crash — unexpected)")
@@ -68,13 +69,15 @@ def after_fix_2(datasource_string):
         return "Redirect built (datasource skipped — malformed value logged)"
 
 good_ds = "99__druid"
-bad_ds  = "no-separator-here"
+# A short link is shared with stale form_data; the datasource field has an old
+# format that was saved before the "__" convention, e.g. just a dataset name
+bad_ds  = "sales_revenue_monthly"
 
-print(f"\n  Input: '{good_ds}' (valid)")
+print(f"\n  form_data['datasource'] = '{good_ds}'")
 print(f"  Before: {before_fix_2(good_ds)}")
 print(f"  After:  {after_fix_2(good_ds)}  {PASS}")
 
-print(f"\n  Input: '{bad_ds}' (malformed)")
+print(f"\n  form_data['datasource'] = '{bad_ds}'  ← old format, no '__' separator")
 try:
     before_fix_2(bad_ds)
 except ValueError as e:
@@ -100,13 +103,14 @@ def after_fix_3(cached_value):
     return f"Chart loaded — form_data keys: {list(initial_form_data.keys())}"
 
 good_cache = '{"datasource": "42__table", "viz_type": "bar"}'
-bad_cache  = "corrupted{not valid json%%"
+# Redis evicted the key mid-write under memory pressure, leaving a truncated value
+bad_cache  = '{"datasource": "42__table", "viz_type": "b'
 
-print(f"\n  Input: valid JSON cache")
+print(f"\n  Cache value: '{good_cache}'")
 print(f"  Before: {before_fix_3(good_cache)}")
 print(f"  After:  {after_fix_3(good_cache)}  {PASS}")
 
-print(f"\n  Input: corrupted cache value")
+print(f"\n  Cache value: '{bad_cache}'  ← truncated mid-write by Redis eviction")
 try:
     before_fix_3(bad_cache)
 except json.JSONDecodeError as e:
