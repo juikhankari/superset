@@ -51,7 +51,7 @@ GITHUB_API_URL = "https://api.github.com"
 LOGS_FILE = Path("logs/sessions.json")
 
 POLL_INTERVAL_SECONDS = 30
-MAX_POLL_ATTEMPTS = 60  # 30 minutes total before we time out
+MAX_POLL_ATTEMPTS = 120  # 60 minutes total before we time out
 
 
 # ---------------------------------------------------------------------------
