@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       issues: write      # needed to post status comments back to the issue
-      contents: read
+      contents: write    # needed to commit logs/sessions.json back to the repo
 
     steps:
       - name: Checkout repository
@@ -51,3 +51,13 @@ jobs:
           ISSUE_BODY: ${{ github.event.issue.body }}
           ISSUE_URL: ${{ github.event.issue.html_url }}
         run: python scripts/devin_remediate.py
+
+      - name: Commit session log to repository
+        if: always()    # run even if remediation timed out or failed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin master
+          git add logs/sessions.json
+          git diff --cached --quiet || git commit -m "chore(logs): update session log for issue #${{ github.event.issue.number }}"
+          git push origin master
