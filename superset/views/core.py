@@ -898,7 +898,10 @@ class Superset(BaseSupersetView):
         :returns: The Flask response
         :raises SupersetSecurityException: If the user cannot access the resource
         """
-        datasource_id, datasource_type = request.args["datasourceKey"].split("__")
+        try:
+            datasource_id, datasource_type = request.args["datasourceKey"].split("__")
+        except (KeyError, ValueError):
+            return json_error_response("Invalid datasourceKey format", status=400)
         datasource = DatasourceDAO.get_datasource(
             DatasourceType(datasource_type), int(datasource_id)
         )
