@@ -1,3 +1,11 @@
+> **This is a fork of Apache Superset used as the target codebase for an event-driven Devin AI remediation system.**
+> 
+> **[→ See AUTOMATION.md for the full system documentation, architecture, and how to run it](./AUTOMATION.md)**
+> 
+> **Live observability dashboard: https://juikhankari.github.io/superset/**
+
+---
+
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
