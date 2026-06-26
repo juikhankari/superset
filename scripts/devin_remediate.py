@@ -203,12 +203,21 @@ def main() -> None:
         current_status = status_data.get("status", "unknown")
         print(f"[poll] Attempt {attempt}/{MAX_POLL_ATTEMPTS} — status: {current_status}")
 
-        if current_status in ("completed", "failed", "stopped", "error"):
+        # Extract PR URL if present — Devin may open a PR before the session
+        # status transitions to a terminal state in the v1 API.
+        pr_info = status_data.get("pull_request")
+        if pr_info and pr_info.get("url"):
+            pr_url = pr_info["url"]
+
+        if current_status in ("completed", "finished", "failed", "stopped", "error"):
             final_status = current_status
-            # Extract PR URL if Devin opened one
-            pr_info = status_data.get("pull_request")
-            if pr_info:
-                pr_url = pr_info.get("url")
+            break
+
+        # Treat an opened PR as implicit completion — the v1 API may keep
+        # reporting "running" even after Devin finishes and opens a PR.
+        if pr_url:
+            print(f"[poll] PR detected ({pr_url}) — treating session as completed.")
+            final_status = "completed"
             break
 
     # Step 4: Calculate how long it took
