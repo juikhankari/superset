@@ -472,7 +472,14 @@ class Superset(BaseSupersetView):
         elif form_data_key := request.args.get("form_data_key"):
             parameters = CommandParameters(key=form_data_key)
             value = GetFormDataCommand(parameters).run()
-            initial_form_data = json.loads(value) if value else {}
+            try:
+                initial_form_data = json.loads(value) if value else {}
+            except json.JSONDecodeError:
+                logger.warning(
+                    "Failed to parse cached form data (key may be corrupted);"
+                    " falling back to empty form."
+                )
+                initial_form_data = {}
 
         if not initial_form_data:
             slice_id = request.args.get("slice_id")
