@@ -1,0 +1,35 @@
+[
+  {
+    "timestamp": "2026-06-25T20:51:01+00:00",
+    "issue_number": "4",
+    "issue_title": "fix(views): handle malformed datasourceKey in datasource_metadata endpoint",
+    "issue_url": "https://github.com/juikhankari/superset/issues/4",
+    "session_id": "devin-de3ed4ba7e8b4d46a9888adb510ed4ff",
+    "session_url": "https://app.devin.ai/sessions/de3ed4ba7e8b4d46a9888adb510ed4ff",
+    "status": "completed",
+    "pr_url": "https://github.com/juikhankari/superset/pull/7",
+    "duration_minutes": 55.3
+  },
+  {
+    "timestamp": "2026-06-25T20:51:05+00:00",
+    "issue_number": "5",
+    "issue_title": "fix(views): handle malformed datasource string in get_redirect_url",
+    "issue_url": "https://github.com/juikhankari/superset/issues/5",
+    "session_id": "devin-09333f7f47d64d379ce85dbd7ee35257",
+    "session_url": "https://app.devin.ai/sessions/09333f7f47d64d379ce85dbd7ee35257",
+    "status": "completed",
+    "pr_url": "https://github.com/juikhankari/superset/pull/8",
+    "duration_minutes": 56.1
+  },
+  {
+    "timestamp": "2026-06-25T20:51:09+00:00",
+    "issue_number": "6",
+    "issue_title": "fix(views): handle JSONDecodeError when loading cached explore form data",
+    "issue_url": "https://github.com/juikhankari/superset/issues/6",
+    "session_id": "devin-46bd4c45e9984e97b5e3a125afcafe6c",
+    "session_url": "https://app.devin.ai/sessions/46bd4c45e9984e97b5e3a125afcafe6c",
+    "status": "completed",
+    "pr_url": "https://github.com/juikhankari/superset/pull/9",
+    "duration_minutes": 57.4
+  }
+]
