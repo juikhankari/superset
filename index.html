@@ -1,12 +1,126 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-        <meta charset="UTF-8">
-            <meta http-equiv="refresh" content="0;url=https://superset.apache.org/">
-                <title>Redirecting to Apache Superset</title>
-  </head>
-  <body>
-        If you are not redirected, <a href="https://superset.apache.org/">click here</a>.
-  </body>
-</html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Devin Remediation Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; padding: 2rem; }
+    h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .subtitle { color: #7d8590; font-size: 0.9rem; margin-bottom: 2rem; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 1.25rem; }
+    .card-label { font-size: 0.75rem; color: #7d8590; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .card-value { font-size: 2rem; font-weight: 700; }
+    .card-value.green { color: #3fb950; }
+    .card-value.blue { color: #58a6ff; }
+    .card-value.yellow { color: #d29922; }
+    .section { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem; }
+    .section-title { font-size: 0.85rem; font-weight: 600; color: #7d8590; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th { text-align: left; padding: 0.5rem 0.75rem; color: #7d8590; font-weight: 500; border-bottom: 1px solid #30363d; }
+    td { padding: 0.75rem; border-bottom: 1px solid #21262d; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    .badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 500; }
+    .badge.completed { background: #1a4a2a; color: #3fb950; border: 1px solid #2ea043; }
+    .badge.failed { background: #3d1a1a; color: #f85149; border: 1px solid #da3633; }
+    .badge.running { background: #1a2a4a; color: #58a6ff; border: 1px solid #388bfd; }
+    a { color: #58a6ff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .health { padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.9rem; font-weight: 500; }
+    .health.green { background: #1a4a2a; color: #3fb950; border: 1px solid #2ea043; }
+    .health.yellow { background: #3d2e1a; color: #d29922; border: 1px solid #9e6a03; }
+    .health.red { background: #3d1a1a; color: #f85149; border: 1px solid #da3633; }
+    .issue-title { color: #e6edf3; max-width: 320px; }
+    .session-link { font-size: 0.75rem; color: #7d8590; }
+  </style>
+</head>
+<body>
+  <h1>Devin Remediation Dashboard</h1>
+  <p class="subtitle">Automated issue remediation via Devin AI — <a href="https://github.com/juikhankari/superset" target="_blank">juikhankari/superset</a></p>
 
+  <div id="app">Loading...</div>
+
+  <script>
+    const SESSIONS_URL = "https://raw.githubusercontent.com/juikhankari/superset/master/logs/sessions.json";
+
+    const STATUS_ICONS = { completed: "✅", failed: "❌", error: "❌", stopped: "🛑", timed_out: "⏱️", running: "🔄", unknown: "❓" };
+
+    async function loadSessions() {
+      const res = await fetch(SESSIONS_URL);
+      if (!res.ok) throw new Error("Failed to fetch sessions.json");
+      return res.json();
+    }
+
+    function prNumber(url) {
+      if (!url) return null;
+      const parts = url.split("/");
+      return parts[parts.length - 1];
+    }
+
+    function render(sessions) {
+      const total = sessions.length;
+      const completed = sessions.filter(s => s.status === "completed").length;
+      const failed = sessions.filter(s => ["failed","error"].includes(s.status)).length;
+      const prs = sessions.filter(s => s.pr_url).length;
+      const successRate = total ? Math.round((completed / total) * 100) : 0;
+
+      const durations = sessions.filter(s => s.status === "completed" && s.duration_minutes).map(s => s.duration_minutes);
+      const avgDuration = durations.length ? (durations.reduce((a,b) => a+b, 0) / durations.length).toFixed(1) : "N/A";
+
+      const healthClass = successRate === 100 ? "green" : successRate >= 75 ? "yellow" : "red";
+      const healthMsg = successRate === 100
+        ? "🟢 All sessions completed successfully. System is healthy."
+        : successRate >= 75
+        ? `🟡 ${successRate}% success rate. Review failed sessions.`
+        : `🔴 ${successRate}% success rate. Investigate failures.`;
+
+      const rows = sessions.map(s => {
+        const icon = STATUS_ICONS[s.status] || "❓";
+        const pr = s.pr_url ? `<a href="${s.pr_url}" target="_blank">PR #${prNumber(s.pr_url)}</a>` : "—";
+        const session = s.session_url ? `<a class="session-link" href="${s.session_url}" target="_blank">${s.session_id.slice(0,20)}…</a>` : s.session_id?.slice(0,20);
+        const ts = new Date(s.timestamp).toLocaleString();
+        return `
+          <tr>
+            <td><a href="${s.issue_url}" target="_blank">#${s.issue_number}</a></td>
+            <td class="issue-title">${s.issue_title}</td>
+            <td><span class="badge ${s.status}">${icon} ${s.status}</span></td>
+            <td>${s.duration_minutes != null ? s.duration_minutes + " min" : "—"}</td>
+            <td>${pr}</td>
+            <td>${session}</td>
+            <td style="font-size:0.75rem;color:#7d8590">${ts}</td>
+          </tr>`;
+      }).join("");
+
+      document.getElementById("app").innerHTML = `
+        <div class="cards">
+          <div class="card"><div class="card-label">Total Sessions</div><div class="card-value blue">${total}</div></div>
+          <div class="card"><div class="card-label">Completed</div><div class="card-value green">${completed}</div></div>
+          <div class="card"><div class="card-label">Failed</div><div class="card-value" style="color:#f85149">${failed}</div></div>
+          <div class="card"><div class="card-label">Success Rate</div><div class="card-value green">${successRate}%</div></div>
+          <div class="card"><div class="card-label">PRs Opened</div><div class="card-value blue">${prs}</div></div>
+          <div class="card"><div class="card-label">Avg Fix Time</div><div class="card-value yellow">${avgDuration} min</div></div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Per-Issue Breakdown</div>
+          <table>
+            <thead><tr><th>#</th><th>Issue</th><th>Status</th><th>Duration</th><th>PR</th><th>Session</th><th>Triggered</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+
+        <div class="section">
+          <div class="section-title">System Health</div>
+          <div class="health ${healthClass}">${healthMsg}</div>
+        </div>
+      `;
+    }
+
+    loadSessions().then(render).catch(err => {
+      document.getElementById("app").innerHTML = `<p style="color:#f85149">Error loading sessions: ${err.message}</p>`;
+    });
+  </script>
+</body>
+</html>
